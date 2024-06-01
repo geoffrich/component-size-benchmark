@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watchEffect } from "vue";
 
-const STORAGE_KEY = "todos-petite-vue";
+const STORAGE_KEY = "todos-vue";
 
 const filters = {
   all: (todos) => todos,

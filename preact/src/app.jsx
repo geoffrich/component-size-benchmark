@@ -6,7 +6,7 @@ const ENTER_KEY = 13;
 
 const setFocus = (el) => el?.focus();
 
-const LOCAL_STORAGE_KEY = "todos-solid";
+const LOCAL_STORAGE_KEY = "todos-preact";
 function useLocalStore(value) {
   // load stored todos on init
   const stored = localStorage.getItem(LOCAL_STORAGE_KEY),
