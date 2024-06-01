@@ -1,47 +1,166 @@
 <script>
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+  const ENTER_KEY = 13;
+  const ESCAPE_KEY = 27;
+
+  let currentFilter = "all";
+  let items = [];
+  let editing = null;
+
+  try {
+    items = JSON.parse(localStorage.getItem("todos-svelte")) || [];
+  } catch (err) {
+    items = [];
+  }
+
+  const updateView = () => {
+    currentFilter = "all";
+    if (window.location.hash === "#/active") {
+      currentFilter = "active";
+    } else if (window.location.hash === "#/completed") {
+      currentFilter = "completed";
+    }
+  };
+
+  window.addEventListener("hashchange", updateView);
+  updateView();
+
+  function clearCompleted() {
+    items = items.filter((item) => !item.completed);
+  }
+
+  function remove(index) {
+    items = items.slice(0, index).concat(items.slice(index + 1));
+  }
+
+  function toggleAll(event) {
+    items = items.map((item) => ({
+      id: item.id,
+      description: item.description,
+      completed: event.target.checked
+    }));
+  }
+
+  function createNew(event) {
+    if (event.which === ENTER_KEY) {
+      items = items.concat({
+        id: Date.now(),
+        description: event.target.value,
+        completed: false
+      });
+      event.target.value = "";
+    }
+  }
+
+  function handleEdit(event) {
+    if (event.which === ENTER_KEY) event.target.blur();
+    else if (event.which === ESCAPE_KEY) editing = null;
+  }
+
+  function submit(event) {
+    items[editing].description = event.target.value;
+    editing = null;
+  }
+
+  $: filtered =
+    currentFilter === "all"
+      ? items
+      : currentFilter === "completed"
+        ? items.filter((item) => item.completed)
+        : items.filter((item) => !item.completed);
+
+  $: numActive = items.filter((item) => !item.completed).length;
+  $: numCompleted = items.filter((item) => item.completed).length;
+
+  $: try {
+    localStorage.setItem("todos-svelte", JSON.stringify(items));
+  } catch (err) {
+    // noop
+  }
 </script>
 
-<main>
-  <div>
-    <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
+<header class="header">
+  <h1>todos</h1>
+  <input
+    class="new-todo"
+    on:keydown={createNew}
+    placeholder="What needs to be done?"
+    autofocus
+  />
+</header>
 
-  <div class="card">
-    <Counter />
-  </div>
+{#if items.length > 0}
+  <section class="main">
+    <input
+      id="toggle-all"
+      class="toggle-all"
+      type="checkbox"
+      on:change={toggleAll}
+      checked={numCompleted === items.length}
+    />
+    <label for="toggle-all">Mark all as complete</label>
 
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
+    <ul class="todo-list">
+      {#each filtered as item, index (item.id)}
+        <li
+          class="{item.completed ? 'completed' : ''} {editing === index
+            ? 'editing'
+            : ''}"
+        >
+          <div class="view">
+            <input
+              class="toggle"
+              type="checkbox"
+              bind:checked={item.completed}
+            />
+            <label on:dblclick={() => (editing = index)}
+              >{item.description}</label
+            >
+            <button on:click={() => remove(index)} class="destroy"></button>
+          </div>
 
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
-</main>
+          {#if editing === index}
+            <input
+              value={item.description}
+              id="edit"
+              class="edit"
+              on:keydown={handleEdit}
+              on:blur={submit}
+              autofocus
+            />
+          {/if}
+        </li>
+      {/each}
+    </ul>
 
-<style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
-</style>
+    <footer class="footer">
+      <span class="todo-count">
+        <strong>{numActive}</strong>
+        {numActive === 1 ? "item" : "items"} left
+      </span>
+
+      <ul class="filters">
+        <li>
+          <a class={currentFilter === "all" ? "selected" : ""} href="#/">All</a>
+        </li>
+        <li>
+          <a
+            class={currentFilter === "active" ? "selected" : ""}
+            href="#/active">Active</a
+          >
+        </li>
+        <li>
+          <a
+            class={currentFilter === "completed" ? "selected" : ""}
+            href="#/completed">Completed</a
+          >
+        </li>
+      </ul>
+
+      {#if numCompleted}
+        <button class="clear-completed" on:click={clearCompleted}>
+          Clear completed
+        </button>
+      {/if}
+    </footer>
+  </section>
+{/if}
