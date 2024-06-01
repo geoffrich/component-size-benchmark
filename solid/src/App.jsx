@@ -1,6 +1,5 @@
 import { createMemo, createEffect, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { render } from "solid-js/web";
 
 const ESCAPE_KEY = 27;
 const ENTER_KEY = 13;
