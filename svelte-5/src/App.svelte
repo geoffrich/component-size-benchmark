@@ -2,9 +2,9 @@
   const ENTER_KEY = 13;
   const ESCAPE_KEY = 27;
 
-  let currentFilter = "all";
-  let items = [];
-  let editing = null;
+  let currentFilter = $state("all");
+  let items = $state([]);
+  let editing = $state(null);
 
   try {
     items = JSON.parse(localStorage.getItem("todos-svelte")) || [];
@@ -21,7 +21,6 @@
     }
   };
 
-  window.addEventListener("hashchange", updateView);
   updateView();
 
   function clearCompleted() {
@@ -33,16 +32,14 @@
   }
 
   function toggleAll(event) {
-    items = items.map((item) => ({
-      id: item.id,
-      description: item.description,
-      completed: event.target.checked
-    }));
+    items.forEach((item) => {
+      item.completed = event.target.checked;
+    });
   }
 
   function createNew(event) {
     if (event.which === ENTER_KEY) {
-      items = items.concat({
+      items.push({
         id: Date.now(),
         description: event.target.value,
         completed: false
@@ -61,28 +58,33 @@
     editing = null;
   }
 
-  $: filtered =
+  let filtered = $derived(
     currentFilter === "all"
       ? items
       : currentFilter === "completed"
         ? items.filter((item) => item.completed)
-        : items.filter((item) => !item.completed);
+        : items.filter((item) => !item.completed)
+  );
 
-  $: numActive = items.filter((item) => !item.completed).length;
-  $: numCompleted = items.filter((item) => item.completed).length;
+  let numActive = $derived(items.filter((item) => !item.completed).length);
+  let numCompleted = $derived(items.filter((item) => item.completed).length);
 
-  $: try {
-    localStorage.setItem("todos-svelte", JSON.stringify(items));
-  } catch (err) {
-    // noop
-  }
+  $effect(() => {
+    try {
+      localStorage.setItem("todos-svelte", JSON.stringify(items));
+    } catch (err) {
+      // noop
+    }
+  });
 </script>
+
+<svelte:window onhashchange={updateView} />
 
 <header class="header">
   <h1>todos</h1>
   <input
     class="new-todo"
-    on:keydown={createNew}
+    onkeydown={createNew}
     placeholder="What needs to be done?"
     autofocus
   />
@@ -94,28 +96,24 @@
       id="toggle-all"
       class="toggle-all"
       type="checkbox"
-      on:change={toggleAll}
+      onchange={toggleAll}
       checked={numCompleted === items.length}
     />
     <label for="toggle-all">Mark all as complete</label>
 
     <ul class="todo-list">
       {#each filtered as item, index (item.id)}
-        <li
-          class="{item.completed ? 'completed' : ''} {editing === index
-            ? 'editing'
-            : ''}"
-        >
+        <li class:completed={item.completed} class:editing={editing === index}>
           <div class="view">
             <input
               class="toggle"
               type="checkbox"
               bind:checked={item.completed}
             />
-            <label on:dblclick={() => (editing = index)}
+            <label ondblclick={() => (editing = index)}
               >{item.description}</label
             >
-            <button on:click={() => remove(index)} class="destroy"></button>
+            <button onclick={() => remove(index)} class="destroy"></button>
           </div>
 
           {#if editing === index}
@@ -123,8 +121,8 @@
               value={item.description}
               id="edit"
               class="edit"
-              on:keydown={handleEdit}
-              on:blur={submit}
+              onkeydown={handleEdit}
+              onblur={submit}
               autofocus
             />
           {/if}
@@ -157,7 +155,7 @@
       </ul>
 
       {#if numCompleted}
-        <button class="clear-completed" on:click={clearCompleted}>
+        <button class="clear-completed" onclick={clearCompleted}>
           Clear completed
         </button>
       {/if}

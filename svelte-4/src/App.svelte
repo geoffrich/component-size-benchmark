@@ -21,7 +21,6 @@
     }
   };
 
-  window.addEventListener("hashchange", updateView);
   updateView();
 
   function clearCompleted() {
@@ -78,6 +77,8 @@
   }
 </script>
 
+<svelte:window on:hashchange={updateView} />
+
 <header class="header">
   <h1>todos</h1>
   <input
@@ -101,11 +102,7 @@
 
     <ul class="todo-list">
       {#each filtered as item, index (item.id)}
-        <li
-          class="{item.completed ? 'completed' : ''} {editing === index
-            ? 'editing'
-            : ''}"
-        >
+        <li class:completed={item.completed} class:editing={editing === index}>
           <div class="view">
             <input
               class="toggle"
