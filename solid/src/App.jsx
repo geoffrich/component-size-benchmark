@@ -13,33 +13,46 @@ function createLocalStore(value) {
     [state, setState] = createStore(stored ? JSON.parse(stored) : value);
 
   // JSON.stringify creates deps on every iterable field
-  createEffect(() => localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state)));
+  createEffect(() =>
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state))
+  );
   return [state, setState];
 }
 
-export default () => {
+const TodoApp = () => {
   const [state, setState] = createLocalStore({
       counter: 1,
       todos: [],
       showMode: "all",
-      editingTodoId: null,
+      editingTodoId: null
     }),
-    remainingCount = createMemo(() => state.todos.length - state.todos.filter((todo) => todo.completed).length),
+    remainingCount = createMemo(
+      () =>
+        state.todos.length - state.todos.filter((todo) => todo.completed).length
+    ),
     filterList = (todos) => {
-      if (state.showMode === "active") return todos.filter((todo) => !todo.completed);
-      else if (state.showMode === "completed") return todos.filter((todo) => todo.completed);
+      if (state.showMode === "active")
+        return todos.filter((todo) => !todo.completed);
+      else if (state.showMode === "completed")
+        return todos.filter((todo) => todo.completed);
       else return todos;
     },
-    removeTodo = (todoId) => setState("todos", (t) => t.filter((item) => item.id !== todoId)),
+    removeTodo = (todoId) =>
+      setState("todos", (t) => t.filter((item) => item.id !== todoId)),
     editTodo = (todo) => setState("todos", (item) => item.id === todo.id, todo),
-    clearCompleted = () => setState("todos", (t) => t.filter((todo) => !todo.completed)),
-    toggleAll = (completed) => setState("todos", (todo) => todo.completed !== completed, { completed }),
+    clearCompleted = () =>
+      setState("todos", (t) => t.filter((todo) => !todo.completed)),
+    toggleAll = (completed) =>
+      setState("todos", (todo) => todo.completed !== completed, { completed }),
     setEditing = (todoId) => setState("editingTodoId", todoId),
     addTodo = ({ target, keyCode }) => {
       const title = target.value.trim();
       if (keyCode === ENTER_KEY && title) {
         setState({
-          todos: [{ title, id: state.counter, completed: false }, ...state.todos],
+          todos: [
+            { title, id: state.counter, completed: false },
+            ...state.todos
+          ],
           counter: state.counter + 1
         });
         target.value = "";
@@ -52,13 +65,15 @@ export default () => {
         setEditing();
       }
     },
-    toggle = (todoId, { target: { checked } }) => editTodo({ id: todoId, completed: checked }),
+    toggle = (todoId, { target: { checked } }) =>
+      editTodo({ id: todoId, completed: checked }),
     doneEditing = (todoId, e) => {
       if (e.keyCode === ENTER_KEY) save(todoId, e);
       else if (e.keyCode === ESCAPE_KEY) setEditing();
     };
 
-  const locationHandler = () => setState("showMode", location.hash.slice(2) || "all");
+  const locationHandler = () =>
+    setState("showMode", location.hash.slice(2) || "all");
   window.addEventListener("hashchange", locationHandler);
   onCleanup(() => window.removeEventListener("hashchange", locationHandler));
 
@@ -66,7 +81,11 @@ export default () => {
     <section class="todoapp">
       <header class="header">
         <h1>todos</h1>
-        <input class="new-todo" placeholder="What needs to be done?" onKeyDown={addTodo} />
+        <input
+          class="new-todo"
+          placeholder="What needs to be done?"
+          onKeyDown={addTodo}
+        />
       </header>
 
       <Show when={state.todos.length > 0}>
@@ -84,11 +103,21 @@ export default () => {
               {(todo) => (
                 <li
                   class="todo"
-                  classList={{ editing: state.editingTodoId === todo.id, completed: todo.completed }}
+                  classList={{
+                    editing: state.editingTodoId === todo.id,
+                    completed: todo.completed
+                  }}
                 >
                   <div class="view">
-                    <input class="toggle" type="checkbox" checked={todo.completed} onInput={[toggle, todo.id]}/>
-                    <label onDblClick={[setEditing, todo.id]}>{todo.title}</label>
+                    <input
+                      class="toggle"
+                      type="checkbox"
+                      checked={todo.completed}
+                      onInput={[toggle, todo.id]}
+                    />
+                    <label onDblClick={[setEditing, todo.id]}>
+                      {todo.title}
+                    </label>
                     <button class="destroy" onClick={[removeTodo, todo.id]} />
                   </div>
                   <Show when={state.editingTodoId === todo.id}>
@@ -112,9 +141,27 @@ export default () => {
             {remainingCount() === 1 ? " item " : " items "} left
           </span>
           <ul class="filters">
-            <li><a href="#/" classList={{selected: state.showMode === "all"}}>All</a></li>
-            <li><a href="#/active" classList={{selected: state.showMode === "active"}}>Active</a></li>
-            <li><a href="#/completed" classList={{selected: state.showMode === "completed"}}>Completed</a></li>
+            <li>
+              <a href="#/" classList={{ selected: state.showMode === "all" }}>
+                All
+              </a>
+            </li>
+            <li>
+              <a
+                href="#/active"
+                classList={{ selected: state.showMode === "active" }}
+              >
+                Active
+              </a>
+            </li>
+            <li>
+              <a
+                href="#/completed"
+                classList={{ selected: state.showMode === "completed" }}
+              >
+                Completed
+              </a>
+            </li>
           </ul>
           <Show when={remainingCount() !== state.todos.length}>
             <button class="clear-completed" onClick={clearCompleted}>
@@ -126,3 +173,5 @@ export default () => {
     </section>
   );
 };
+
+export default TodoApp;
