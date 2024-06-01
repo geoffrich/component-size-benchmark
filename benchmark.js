@@ -1,4 +1,6 @@
 import { transformSync } from "@babel/core";
+import { compile as svelte5Compile } from "./svelte-5/node_modules/svelte/src/compiler/index.js";
+import { compile as svelte4Compile } from "./svelte-4/node_modules/svelte/src/compiler/index.js";
 
 import { minify } from "terser";
 
@@ -9,7 +11,10 @@ import { brotliCompressSync, gzipSync } from "node:zlib";
 const frameworks = {
   preact: "./preact/src/app.jsx",
   react: "./react/src/App.jsx",
-  solid: "./solid/src/App.jsx"
+  solid: "./solid/src/App.jsx",
+  svelte5: "./svelte-5/src/App.svelte",
+  svelte5Classic: "./svelte-5-classic/src/App.svelte",
+  svelte4: "./svelte-4/src/App.svelte"
 };
 
 const transforms = {
@@ -38,6 +43,29 @@ const transforms = {
       presets: ["solid"]
     });
     return result.code;
+  },
+  svelte5: (src) => {
+    const result = svelte5Compile(src, {
+      generate: "client",
+      dev: false
+    });
+    return result.js.code;
+  },
+  svelte5Classic: (src) => {
+    const result = svelte5Compile(src, {
+      generate: "client",
+      dev: false
+    });
+    return result.js.code;
+  },
+  svelte4: (src) => {
+    const result = svelte4Compile(src, {
+      generate: "dom",
+      dev: false,
+      css: "external",
+      hydratable: true
+    });
+    return result.js.code;
   }
 };
 
@@ -48,11 +76,11 @@ for (const [framework, filepath] of Object.entries(frameworks)) {
 
   code = transforms[framework](code);
 
-  // remove imports, which will be shared between multiple components
-  code = code
-    .split("\n")
-    .filter((line) => !line.startsWith("import "))
-    .join("\n");
+  // ChatGPT-generated regex to remove import statements
+  code = code.replace(
+    /import\s[\s\S]*?from\s['"][^'"]*['"];?|import\s['"][^'"]*['"];?/gm,
+    ""
+  );
 
   const { code: minified } = await minify(code);
   console.log(framework, {
