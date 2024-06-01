@@ -1,0 +1,20 @@
+{
+  "name": "component-size-benchmark",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Initialized default Vite templates for each framework.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/core": "^7.24.6",
+    "@babel/plugin-transform-react-jsx": "^7.24.6",
+    "@babel/preset-react": "^7.24.6",
+    "babel-preset-solid": "^1.8.17",
+    "terser": "^5.31.0"
+  }
+}
