@@ -5,6 +5,7 @@ import {
   compileScript as compileVueScript,
   parse as parseVue
 } from "./vue/node_modules/vue/compiler-sfc/index.mjs";
+import { build } from "vite";
 
 import { minify } from "terser";
 
@@ -82,40 +83,49 @@ const transforms = {
   }
 };
 
-if (!existsSync("./dist")) {
-  mkdirSync("./dist");
+async function getComponentStats() {
+  for (const [framework, filepath] of Object.entries(frameworks)) {
+    let code = readFileSync(filepath, {
+      encoding: "utf8"
+    });
+
+    code = transforms[framework](code);
+
+    // ChatGPT-generated regex to remove import statements
+    code = code.replace(
+      /import\s[\s\S]*?from\s['"][^'"]*['"];?|import\s['"][^'"]*['"];?/gm,
+      ""
+    );
+
+    const { code: minified } = await minify(code);
+
+    const gzipped = gzipSync(minified);
+    const brotli = brotliCompressSync(minified);
+
+    console.log(framework, {
+      minified: bytesize(minified),
+      gzip: bytesize(gzipped),
+      brotli: bytesize(brotli)
+    });
+
+    writeFileSync(`./dist/${framework}.js`, code);
+    writeFileSync(`./dist/${framework}.min.js`, minified);
+    writeFileSync(`./dist/${framework}.min.js.gz`, gzipped);
+    writeFileSync(`./dist/${framework}.min.js.brotli`, brotli);
+  }
 }
 
-for (const [framework, filepath] of Object.entries(frameworks)) {
-  let code = readFileSync(filepath, {
-    encoding: "utf8"
-  });
-
-  code = transforms[framework](code);
-
-  // ChatGPT-generated regex to remove import statements
-  code = code.replace(
-    /import\s[\s\S]*?from\s['"][^'"]*['"];?|import\s['"][^'"]*['"];?/gm,
-    ""
-  );
-
-  const { code: minified } = await minify(code);
-
-  const gzipped = gzipSync(minified);
-  const brotli = brotliCompressSync(minified);
-
-  console.log(framework, {
-    minified: bytesize(minified),
-    gzip: bytesize(gzipped),
-    brotli: bytesize(brotli)
-  });
-
-  writeFileSync(`./dist/${framework}.js`, code);
-  writeFileSync(`./dist/${framework}.min.js`, minified);
-  writeFileSync(`./dist/${framework}.min.js.gz`, gzipped);
-  writeFileSync(`./dist/${framework}.min.js.brotli`, brotli);
-}
+async function getRuntimeStats() {}
 
 function bytesize(str) {
   return Buffer.byteLength(str, "utf-8");
 }
+
+function runBenchmark() {
+  if (!existsSync("./dist")) {
+    mkdirSync("./dist");
+  }
+  getComponentStats();
+}
+
+runBenchmark();
