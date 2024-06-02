@@ -4,7 +4,7 @@ import { compile as svelte4Compile } from "./svelte-4/node_modules/svelte/src/co
 
 import { minify } from "terser";
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { Buffer } from "node:buffer";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 
@@ -69,6 +69,10 @@ const transforms = {
   }
 };
 
+if (!existsSync("./dist")) {
+  mkdirSync("./dist");
+}
+
 for (const [framework, filepath] of Object.entries(frameworks)) {
   let code = readFileSync(filepath, {
     encoding: "utf8"
@@ -83,11 +87,19 @@ for (const [framework, filepath] of Object.entries(frameworks)) {
   );
 
   const { code: minified } = await minify(code);
+
+  const gzipped = gzipSync(minified);
+  const brotli = brotliCompressSync(minified);
+
   console.log(framework, {
     minified: bytesize(minified),
-    gzip: bytesize(gzipSync(minified)),
-    brotli: bytesize(brotliCompressSync(minified))
+    gzip: bytesize(gzipped),
+    brotli: bytesize(brotli)
   });
+
+  writeFileSync(`./dist/${framework}.min.js`, minified);
+  writeFileSync(`./dist/${framework}.min.js.gz`, gzipped);
+  writeFileSync(`./dist/${framework}.min.js.brotli`, brotli);
 }
 
 function bytesize(str) {
