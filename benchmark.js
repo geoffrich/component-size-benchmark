@@ -30,10 +30,6 @@ const frameworks = {
     component: "App.svelte",
     dir: "./svelte-5/"
   },
-  svelte5Classic: {
-    component: "App.svelte",
-    dir: "./svelte-5-classic/"
-  },
   svelte4: {
     component: "App.svelte",
     dir: "./svelte-4/"
@@ -72,13 +68,6 @@ const transforms = {
     return result.code;
   },
   svelte5: (src) => {
-    const result = svelte5Compile(src, {
-      generate: "client",
-      dev: false
-    });
-    return result.js.code;
-  },
-  svelte5Classic: (src) => {
     const result = svelte5Compile(src, {
       generate: "client",
       dev: false
