@@ -9,9 +9,15 @@ import { build } from "vite";
 
 import { minify } from "terser";
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  rmdirSync,
+  rmSync
+} from "node:fs";
 import { Buffer } from "node:buffer";
-import path from "node:path";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 
 const frameworks = {
@@ -132,7 +138,8 @@ async function writeDifferentFormats(src, filename) {
 
 async function getBundleStats() {
   const result = await build({
-    root: "./svelte-5"
+    root: "./svelte-5",
+    logLevel: "silent"
   });
   const builtJs = result.output.find((o) => o.fileName.endsWith(".js")).code;
 
@@ -153,9 +160,8 @@ function bytesize(str) {
 }
 
 async function runBenchmark() {
-  if (!existsSync("./dist")) {
-    mkdirSync("./dist");
-  }
+  rmSync("./dist", { recursive: true, force: true });
+  mkdirSync("./dist");
   // await getComponentStats();
   await getBundleStats();
 }
