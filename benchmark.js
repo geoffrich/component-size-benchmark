@@ -1,6 +1,10 @@
 import { transformSync } from "@babel/core";
 import { compile as svelte5Compile } from "./svelte-5/node_modules/svelte/src/compiler/index.js";
 import { compile as svelte4Compile } from "./svelte-4/node_modules/svelte/src/compiler/index.js";
+import {
+  compileScript as compileVueScript,
+  parse as parseVue
+} from "./vue/node_modules/vue/compiler-sfc/index.mjs";
 
 import { minify } from "terser";
 
@@ -14,7 +18,8 @@ const frameworks = {
   solid: "./solid/src/App.jsx",
   svelte5: "./svelte-5/src/App.svelte",
   svelte5Classic: "./svelte-5-classic/src/App.svelte",
-  svelte4: "./svelte-4/src/App.svelte"
+  svelte4: "./svelte-4/src/App.svelte",
+  vue: "./vue/src/App.vue"
 };
 
 const transforms = {
@@ -66,6 +71,14 @@ const transforms = {
       hydratable: true
     });
     return result.js.code;
+  },
+  vue: (src) => {
+    const parsed = parseVue(src);
+    const script = compileVueScript(parsed.descriptor, {
+      inlineTemplate: true,
+      id: "x"
+    });
+    return script.content;
   }
 };
 
@@ -97,6 +110,7 @@ for (const [framework, filepath] of Object.entries(frameworks)) {
     brotli: bytesize(brotli)
   });
 
+  writeFileSync(`./dist/${framework}.js`, code);
   writeFileSync(`./dist/${framework}.min.js`, minified);
   writeFileSync(`./dist/${framework}.min.js.gz`, gzipped);
   writeFileSync(`./dist/${framework}.min.js.brotli`, brotli);
