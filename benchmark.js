@@ -11,6 +11,7 @@ import { minify } from "terser";
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { Buffer } from "node:buffer";
+import path from "node:path";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 
 const frameworks = {
@@ -97,35 +98,66 @@ async function getComponentStats() {
       ""
     );
 
-    const { code: minified } = await minify(code);
-
-    const gzipped = gzipSync(minified);
-    const brotli = brotliCompressSync(minified);
+    const { minified, gzipped, brotli } = await writeDifferentFormats(
+      code,
+      framework
+    );
 
     console.log(framework, {
       minified: bytesize(minified),
       gzip: bytesize(gzipped),
       brotli: bytesize(brotli)
     });
-
-    writeFileSync(`./dist/${framework}.js`, code);
-    writeFileSync(`./dist/${framework}.min.js`, minified);
-    writeFileSync(`./dist/${framework}.min.js.gz`, gzipped);
-    writeFileSync(`./dist/${framework}.min.js.brotli`, brotli);
   }
 }
 
-async function getRuntimeStats() {}
+async function writeDifferentFormats(src, filename) {
+  const { code: minified } = await minify(src);
+
+  const gzipped = gzipSync(minified);
+  const brotli = brotliCompressSync(minified);
+
+  writeFileSync(`./dist/${filename}.js`, src);
+  writeFileSync(`./dist/${filename}.min.js`, minified);
+  writeFileSync(`./dist/${filename}.min.js.gz`, gzipped);
+  writeFileSync(`./dist/${filename}.min.js.brotli`, brotli);
+
+  return {
+    original: src,
+    minified,
+    gzipped,
+    brotli
+  };
+}
+
+async function getBundleStats() {
+  const result = await build({
+    root: "./svelte-5"
+  });
+  const builtJs = result.output.find((o) => o.fileName.endsWith(".js")).code;
+
+  const framework = "svelte5.bundle";
+  const { minified, gzipped, brotli } = await writeDifferentFormats(
+    builtJs,
+    framework
+  );
+  console.log(framework, {
+    minified: bytesize(minified),
+    gzip: bytesize(gzipped),
+    brotli: bytesize(brotli)
+  });
+}
 
 function bytesize(str) {
   return Buffer.byteLength(str, "utf-8");
 }
 
-function runBenchmark() {
+async function runBenchmark() {
   if (!existsSync("./dist")) {
     mkdirSync("./dist");
   }
-  getComponentStats();
+  // await getComponentStats();
+  await getBundleStats();
 }
 
 runBenchmark();
