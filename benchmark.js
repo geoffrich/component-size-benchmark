@@ -8,26 +8,40 @@ import {
 import { build } from "vite";
 
 import { minify } from "terser";
-
-import {
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  existsSync,
-  rmdirSync,
-  rmSync
-} from "node:fs";
+import path from "node:path";
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { Buffer } from "node:buffer";
 import { brotliCompressSync, gzipSync } from "node:zlib";
 
 const frameworks = {
-  preact: "./preact/src/app.jsx",
-  react: "./react/src/App.jsx",
-  solid: "./solid/src/App.jsx",
-  svelte5: "./svelte-5/src/App.svelte",
-  svelte5Classic: "./svelte-5-classic/src/App.svelte",
-  svelte4: "./svelte-4/src/App.svelte",
-  vue: "./vue/src/App.vue"
+  preact: {
+    component: "app.jsx",
+    dir: "./preact/"
+  },
+  react: {
+    component: "App.jsx",
+    dir: "./react/"
+  },
+  solid: {
+    component: "App.jsx",
+    dir: "./solid/"
+  },
+  svelte5: {
+    component: "App.svelte",
+    dir: "./svelte-5/"
+  },
+  svelte5Classic: {
+    component: "App.svelte",
+    dir: "./svelte-5-classic/"
+  },
+  svelte4: {
+    component: "App.svelte",
+    dir: "./svelte-4/"
+  },
+  vue: {
+    component: "App.vue",
+    dir: "./vue/"
+  }
 };
 
 const transforms = {
@@ -91,7 +105,9 @@ const transforms = {
 };
 
 async function getComponentStats() {
-  for (const [framework, filepath] of Object.entries(frameworks)) {
+  const result = {};
+  for (const [framework, config] of Object.entries(frameworks)) {
+    let filepath = path.join(config.dir, "src", config.component);
     let code = readFileSync(filepath, {
       encoding: "utf8"
     });
@@ -109,12 +125,14 @@ async function getComponentStats() {
       framework
     );
 
-    console.log(framework, {
+    result[framework] = {
       minified: bytesize(minified),
       gzip: bytesize(gzipped),
       brotli: bytesize(brotli)
-    });
+    };
   }
+
+  return result;
 }
 
 async function writeDifferentFormats(src, filename) {
@@ -137,33 +155,61 @@ async function writeDifferentFormats(src, filename) {
 }
 
 async function getBundleStats() {
-  const result = await build({
-    root: "./svelte-5",
-    logLevel: "silent"
-  });
-  const builtJs = result.output.find((o) => o.fileName.endsWith(".js")).code;
+  const result = {};
+  for (const [framework, config] of Object.entries(frameworks)) {
+    const { output } = await build({
+      root: config.dir,
+      logLevel: "silent"
+    });
+    const builtJs = output.find((o) => o.fileName.endsWith(".js")).code;
 
-  const framework = "svelte5.bundle";
-  const { minified, gzipped, brotli } = await writeDifferentFormats(
-    builtJs,
-    framework
-  );
-  console.log(framework, {
-    minified: bytesize(minified),
-    gzip: bytesize(gzipped),
-    brotli: bytesize(brotli)
-  });
+    const { minified, gzipped, brotli } = await writeDifferentFormats(
+      builtJs,
+      `${framework}.bundle`
+    );
+    result[framework] = {
+      minified: bytesize(minified),
+      gzip: bytesize(gzipped),
+      brotli: bytesize(brotli)
+    };
+  }
+  return result;
 }
 
 function bytesize(str) {
   return Buffer.byteLength(str, "utf-8");
 }
 
+function makeCsv(componentStats, bundleStats) {
+  let csv = "";
+  const columns = Object.keys(frameworks);
+  csv += "," + columns.join(",") + "\n";
+
+  writeRow("component (min)", componentStats, "minified");
+  writeRow("component (gzip)", componentStats, "gzip");
+  writeRow("component (brotli)", componentStats, "brotli");
+  writeRow("bundle (min)", bundleStats, "minified");
+  writeRow("bundle (gzip)", bundleStats, "gzip");
+  writeRow("bundle (brotli)", bundleStats, "brotli");
+  return csv;
+
+  function writeRow(label, obj, subkey) {
+    csv += label;
+    for (let column of columns) {
+      csv += "," + obj[column][subkey];
+    }
+    csv += "\n";
+  }
+}
+
 async function runBenchmark() {
   rmSync("./dist", { recursive: true, force: true });
   mkdirSync("./dist");
-  // await getComponentStats();
-  await getBundleStats();
+  const componentStats = await getComponentStats();
+  const bundleStats = await getBundleStats();
+  console.log([componentStats, bundleStats]);
+  const csv = makeCsv(componentStats, bundleStats);
+  writeFileSync("./dist/stats.csv", csv);
 }
 
 runBenchmark();
