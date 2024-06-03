@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     svelte({
       compilerOptions: {
-        hydratable: true
+        hydratable: false
       }
     })
   ]

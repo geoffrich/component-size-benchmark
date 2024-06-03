@@ -34,6 +34,10 @@ const frameworks = {
     component: "App.svelte",
     dir: "./svelte-4/"
   },
+  svelte4NonHydratable: {
+    component: "App.svelte",
+    dir: "./svelte-4-no-hydrate/"
+  },
   vue: {
     component: "App.vue",
     dir: "./vue/"
@@ -80,6 +84,15 @@ const transforms = {
       dev: false,
       css: "external",
       hydratable: true
+    });
+    return result.js.code;
+  },
+  svelte4NonHydratable: (src) => {
+    const result = svelte4Compile(src, {
+      generate: "dom",
+      dev: false,
+      css: "external",
+      hydratable: false
     });
     return result.js.code;
   },
