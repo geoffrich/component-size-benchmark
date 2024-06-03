@@ -204,14 +204,40 @@ function makeCsv(componentStats, bundleStats) {
   }
 }
 
+function makeMarkdownTable(componentStats, bundleStats) {
+  let table = "";
+  const columns = Object.keys(frameworks);
+  table += "| |" + columns.join("|") + "|\n";
+  table += "| --- |" + columns.map((_) => "--- |").join("") + "\n";
+
+  writeRow("component (min)", componentStats, "minified");
+  writeRow("component (gzip)", componentStats, "gzip");
+  writeRow("component (brotli)", componentStats, "brotli");
+  writeRow("bundle (min)", bundleStats, "minified");
+  writeRow("bundle (gzip)", bundleStats, "gzip");
+  writeRow("bundle (brotli)", bundleStats, "brotli");
+  return table;
+
+  function writeRow(label, obj, subkey) {
+    table += "| " + label;
+    for (let column of columns) {
+      table += " | " + obj[column][subkey];
+    }
+    table += "|\n";
+  }
+}
+
 async function runBenchmark() {
   rmSync("./dist", { recursive: true, force: true });
   mkdirSync("./dist");
   const componentStats = await getComponentStats();
   const bundleStats = await getBundleStats();
-  console.log([componentStats, bundleStats]);
+  console.log("component stats", componentStats);
+  console.log("bundle stats", bundleStats);
   const csv = makeCsv(componentStats, bundleStats);
   writeFileSync("./dist/stats.csv", csv);
+  const mdTable = makeMarkdownTable(componentStats, bundleStats);
+  writeFileSync("./stats.md", mdTable);
 }
 
 runBenchmark();
