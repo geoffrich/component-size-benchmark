@@ -161,7 +161,12 @@ async function getBundleStats() {
   for (const [framework, config] of Object.entries(frameworks)) {
     const { output } = await build({
       root: config.dir,
-      logLevel: "silent"
+      logLevel: "silent",
+      build: {
+        modulePreload: {
+          polyfill: false
+        }
+      }
     });
     const builtJs = output.find((o) => o.fileName.endsWith(".js")).code;
 
