@@ -1,10 +1,10 @@
 import { transformSync } from "@babel/core";
-import { compile as svelte5Compile } from "./svelte-5/node_modules/svelte/src/compiler/index.js";
-import { compile as svelte4Compile } from "./svelte-4/node_modules/svelte/src/compiler/index.js";
+import { compile as svelte5Compile } from "./projects/svelte-5/node_modules/svelte/src/compiler/index.js";
+import { compile as svelte4Compile } from "./projects/svelte-4/node_modules/svelte/src/compiler/index.js";
 import {
   compileScript as compileVueScript,
   parse as parseVue
-} from "./vue/node_modules/vue/compiler-sfc/index.mjs";
+} from "./projects/vue/node_modules/vue/compiler-sfc/index.mjs";
 import { build } from "vite";
 
 import { minify } from "terser";
@@ -16,31 +16,31 @@ import { brotliCompressSync, gzipSync } from "node:zlib";
 const frameworks = {
   preact: {
     component: "app.jsx",
-    dir: "./preact/"
+    dir: "./projects/preact/"
   },
   react: {
     component: "App.jsx",
-    dir: "./react/"
+    dir: "./projects/react/"
   },
   solid: {
     component: "App.jsx",
-    dir: "./solid/"
+    dir: "./projects/solid/"
   },
   svelte5: {
     component: "App.svelte",
-    dir: "./svelte-5/"
+    dir: "./projects/svelte-5/"
   },
   svelte4: {
     component: "App.svelte",
-    dir: "./svelte-4/"
+    dir: "./projects/svelte-4/"
   },
   svelte4NonHydratable: {
     component: "App.svelte",
-    dir: "./svelte-4-no-hydrate/"
+    dir: "./projects/svelte-4-no-hydrate/"
   },
   vue: {
     component: "App.vue",
-    dir: "./vue/"
+    dir: "./projects/vue/"
   }
 };
 
