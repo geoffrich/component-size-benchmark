@@ -1,5 +1,5 @@
 {
-  "name": "svelte-4",
+  "name": "vue",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,9 +8,11 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^3.0.2",
-    "svelte": "^4.2.12",
-    "vite": "^5.2.0"
+    "@vitejs/plugin-vue": "^5.2.3",
+    "vite": "^6.3.3"
   }
 }

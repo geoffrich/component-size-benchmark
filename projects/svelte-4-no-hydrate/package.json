@@ -1,5 +1,5 @@
 {
-  "name": "solid",
+  "name": "svelte-4",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,11 +8,9 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "solid-js": "^1.8.15"
-  },
   "devDependencies": {
-    "vite": "^5.2.0",
-    "vite-plugin-solid": "^2.10.2"
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "svelte": "^4.2.19",
+    "vite": "^5.4.18"
   }
 }
